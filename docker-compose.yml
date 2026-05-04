@@ -39,6 +39,7 @@ services:
     image: gvenzl/oracle-xe:21-slim
     container_name: emoeat-oracle
     restart: unless-stopped
+    shm_size: '1g'
     environment:
       ORACLE_PASSWORD: oracle_root
       APP_USER: emoeat_user
