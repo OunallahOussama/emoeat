@@ -1,4 +1,5 @@
 ﻿<?php
+ob_start();
 /* ================================================
    register.php — Page d'inscription
    L'utilisateur crée son compte en renseignant
