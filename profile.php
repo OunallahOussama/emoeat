@@ -57,8 +57,8 @@ try {
                 $sql2 = "UPDATE USER_PROFILE SET WEIGHT = :weight, HEIGHT = :height,
                          ALLERGIES = :allergies, GOAL = :goal WHERE ID_USER = :u";
             } else {
-                $sql2 = "INSERT INTO USER_PROFILE (ID_PROFILE, ID_USER, WEIGHT, HEIGHT, ALLERGIES, GOAL)
-                         VALUES (SEQ_PROFILE.NEXTVAL, :u, :weight, :height, :allergies, :goal)";
+                $sql2 = "INSERT INTO USER_PROFILE (ID_USER, WEIGHT, HEIGHT, ALLERGIES, GOAL)
+                         VALUES (:u, :weight, :height, :allergies, :goal)";
             }
             $stmt2 = $conn->prepare($sql2);
             $stmt2->bindParam(":u",         $user_id);

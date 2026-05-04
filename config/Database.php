@@ -1,31 +1,36 @@
 <?php
 /* ================================================
    config/Database.php
-   Classe qui gère la connexion à la base de données Oracle.
+   Classe qui gère la connexion à la base de données MySQL.
    On l'appelle depuis connexion.php avec new Database()
    ================================================ */
 class Database {
-    /* Adresse du serveur Oracle et nom de la base */
-    private $db_name = "localhost:1521/XE"; 
-    /* Nom d'utilisateur et mot de passe pour se connecter à Oracle */
-    private $username = "ESEN_STUDENT";
-    private $password = "manager";
-    public $conn; /* La connexion active sera stockée ici */
+    private $host;
+    private $db_name;
+    private $username;
+    private $password;
+    public $conn;
+
+    public function __construct() {
+        $this->host     = getenv('DB_HOST') ?: 'localhost';
+        $this->db_name  = getenv('DB_NAME') ?: 'emoeat';
+        $this->username = getenv('DB_USER') ?: 'emoeat_user';
+        $this->password = getenv('DB_PASSWORD') ?: 'emoeat_pass';
+    }
 
     // Méthode pour obtenir la connexion à la base de données
     public function getConnection() {
         $this->conn = null;
 
         try {
-            // Connexion avec PDO (Exigence de ton PFA)
-            $this->conn = new PDO("oci:dbname=" . $this->db_name, $this->username, $this->password);
+            $dsn = "mysql:host=" . $this->host . ";dbname=" . $this->db_name . ";charset=utf8mb4";
+            $this->conn = new PDO($dsn, $this->username, $this->password);
             
             // Configuration pour afficher les erreurs SQL proprement
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             
         } catch(PDOException $exception) {
-            // Affichage de l'erreur en cas de problème
-            die("Erreur de connexion Oracle : " . $exception->getMessage());
+            die("Erreur de connexion MySQL : " . $exception->getMessage());
         }
 
         return $this->conn;

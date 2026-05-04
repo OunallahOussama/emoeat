@@ -34,8 +34,8 @@ if(isset($_POST['add_food'])) {
         try {
             /* Insertion du nouvel aliment avec un identifiant généré automatiquement */
             $stmt = $conn->prepare(
-                "INSERT INTO FOODS (ID_FOOD, FOOD_NAME, CATEGORY, CALORIES, PROTEIN, CARBS, FAT, DESCRIPTION)
-                 VALUES (SEQ_FOODS.NEXTVAL, :name, :cat, :cal, :prot, :carbs, :fat, :desc)"
+                "INSERT INTO FOODS (FOOD_NAME, CATEGORY, CALORIES, PROTEIN, CARBS, FAT, DESCRIPTION)
+                 VALUES (:name, :cat, :cal, :prot, :carbs, :fat, :desc)"
             );
             $stmt->bindParam(':name',  $fname);
             $stmt->bindParam(':cat',   $cat);

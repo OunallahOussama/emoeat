@@ -48,17 +48,16 @@ if(isset($_POST['register'])) {
             try {
                 /* Insertion du nouvel utilisateur dans la table USERS */
                 $stmtU = $conn->prepare(
-                    "INSERT INTO USERS (id_user, name, email, password, role, created_at)
-                     VALUES (SEQ_USERS.NEXTVAL, :name, :email, :password, 'CLIENT', SYSDATE)"
+                    "INSERT INTO USERS (name, email, password, role, created_at)
+                     VALUES (:name, :email, :password, 'CLIENT', NOW())"
                 );
                 $stmtU->bindParam(":name",     $name);
                 $stmtU->bindParam(":email",    $email);
                 $stmtU->bindParam(":password", $hashed);
                 $stmtU->execute();
 
-                /* On récupère l'ID du nouvel utilisateur via CURRVAL (fiable avec Oracle) */
-                $idS   = $conn->query("SELECT SEQ_USERS.CURRVAL AS ID_USER FROM DUAL");
-                $newId = (int) $idS->fetchColumn();
+                /* On récupère l'ID du nouvel utilisateur via lastInsertId */
+                $newId = (int) $conn->lastInsertId();
 
                 /* On crée aussi l'entrée dans la table CLIENT */
                 $stmtC = $conn->prepare(

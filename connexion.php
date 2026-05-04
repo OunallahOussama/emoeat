@@ -14,8 +14,8 @@ $conn = $database-> getConnection();
 function logActivity(PDO $conn, int $user_id, string $action): void {
     try {
         $stmt = $conn->prepare(
-            "INSERT INTO ACTIVITY_LOG (ID_LOG, ID_USER, ACTION, LOG_DATE)
-             VALUES (SEQ_LOG.NEXTVAL, :u, :a, SYSDATE)"
+            "INSERT INTO ACTIVITY_LOG (ID_USER, ACTION, LOG_DATE)
+             VALUES (:u, :a, NOW())"
         );
         $stmt->bindParam(':u', $user_id, PDO::PARAM_INT);
         $stmt->bindParam(':a', $action,  PDO::PARAM_STR);

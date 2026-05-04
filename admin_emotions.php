@@ -27,8 +27,8 @@ if(isset($_POST['add_emotion'])) {
     } else {
         try {
             $stmt = $conn->prepare(
-                "INSERT INTO EMOTIONS (ID_EMOTION, EMOTION_NAME, DESCRIPTION)
-                 VALUES (SEQ_EMOTIONS.NEXTVAL, :name, :desc)"
+                "INSERT INTO EMOTIONS (EMOTION_NAME, DESCRIPTION)
+                 VALUES (:name, :desc)"
             );
             $stmt->bindParam(':name', $ename);
             $stmt->bindParam(':desc', $edesc);
@@ -72,8 +72,8 @@ if(isset($_POST['add_rule'])) {
     if($r_emo > 0 && $r_food > 0) {
         try {
             $stmt = $conn->prepare(
-                "INSERT INTO EMOTION_FOOD (ID_RULE, ID_EMOTION, ID_FOOD, INTENSITY)
-                 VALUES (SEQ_EF.NEXTVAL, :e, :f, :i)"
+                "INSERT INTO EMOTION_FOOD (ID_EMOTION, ID_FOOD, INTENSITY)
+                 VALUES (:e, :f, :i)"
             );
             $stmt->bindParam(':e', $r_emo,  PDO::PARAM_INT);
             $stmt->bindParam(':f', $r_food, PDO::PARAM_INT);

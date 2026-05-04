@@ -198,11 +198,11 @@ if(isset($_POST['save_selection'])) {
             $saveKey = 'reco_saved_' . $user_id . '_' . $s_emo_id;
             if(empty($_SESSION[$saveKey])) {
                 $_SESSION[$saveKey] = true;
-                $stUE = $conn->prepare("INSERT INTO USER_EMOTIONS (ID_USER_EMOTION, id_user, id_emotion, emotion_date) VALUES (SEQ_UE.NEXTVAL, :u, :e, SYSDATE)");
+                $stUE = $conn->prepare("INSERT INTO USER_EMOTIONS (id_user, id_emotion, emotion_date) VALUES (:u, :e, NOW())");
                 $stUE->execute([':u' => $user_id, ':e' => $s_emo_id]);
 
                 $stFd = $conn->prepare("SELECT description FROM FOODS WHERE id_food = :id");
-                $stR  = $conn->prepare("INSERT INTO RECOMMENDATIONS (ID_REC, id_emotion, id_food, benefit, id_user, recommendation_date) VALUES (SEQ_REC.NEXTVAL, :e, :f, :b, :u, SYSDATE)");
+                $stR  = $conn->prepare("INSERT INTO RECOMMENDATIONS (id_emotion, id_food, benefit, id_user, recommendation_date) VALUES (:e, :f, :b, :u, NOW())");
                 foreach($s_food_ids as $fid) {
                     $stFd->execute([':id' => $fid]);
                     $fdRow   = $stFd->fetch(PDO::FETCH_ASSOC);
