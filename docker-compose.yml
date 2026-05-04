@@ -30,33 +30,44 @@ services:
         condition: service_healthy
     environment:
       DB_HOST: db
-      DB_PORT: "1521"
-      DB_SERVICE: XEPDB1
+      DB_NAME: emoeat
       DB_USER: emoeat_user
       DB_PASSWORD: emoeat_pass
 
   db:
-    image: gvenzl/oracle-xe:21-slim
-    container_name: emoeat-oracle
+    image: mysql:8.0
+    container_name: emoeat-mysql
     restart: unless-stopped
-    shm_size: '1g'
     environment:
-      ORACLE_PASSWORD: oracle_root
-      APP_USER: emoeat_user
-      APP_USER_PASSWORD: emoeat_pass
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: emoeat
+      MYSQL_USER: emoeat_user
+      MYSQL_PASSWORD: emoeat_pass
     ports:
-      - "1521:1521"
+      - "3306:3306"
     volumes:
-      - oracle_data:/opt/oracle/oradata
-      - ./docker/init.sql:/container-entrypoint-initdb.d/init.sql
+      - db_data:/var/lib/mysql
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD", "healthcheck.sh"]
-      interval: 30s
-      timeout: 10s
-      retries: 20
-      start_period: 300s
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: emoeat-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: root_password
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
-  oracle_data:
+  db_data:
   certbot_www:
   certbot_conf:

@@ -6,6 +6,7 @@
 |---------|-----|
 | App (HTTPS) | https://emoeat.health |
 | App (HTTP) | http://emoeat.health (redirects to HTTPS) |
+| phpMyAdmin | http://emoeat.health:8081 |
 
 ## Credentials
 
@@ -13,18 +14,21 @@
 - **Email:** admin@emoeat.com
 - **Password:** password
 
-### Oracle Database
-- **Host:** emoeat.health
-- **Port:** 1521
-- **Service:** XEPDB1
+### phpMyAdmin
+- **Server:** db
+- **Username:** root
+- **Password:** root_password
+
+Or:
 - **Username:** emoeat_user
 - **Password:** emoeat_pass
-- **SYS Password:** oracle_root
 
-### SQL*Plus connection (from container)
-```bash
-docker exec -it emoeat-oracle sqlplus emoeat_user/emoeat_pass@//localhost:1521/XEPDB1
-```
+### MySQL (direct)
+- **Host:** emoeat.health
+- **Port:** 3306
+- **Database:** emoeat
+- **Username:** emoeat_user
+- **Password:** emoeat_pass
 
 ## Docker Commands
 
@@ -57,8 +61,9 @@ docker-compose up -d --build
 
 ## Stack
 
-- **PHP 8.2** + Apache + OCI8/PDO_OCI
-- **Oracle XE 21c** (gvenzl/oracle-xe:21-slim)
+- **PHP 8.2** + Apache
+- **MySQL 8.0**
 - **Nginx** (reverse proxy + SSL)
 - **Let's Encrypt** (SSL certificate)
+- **phpMyAdmin** (database management)
 - **Docker Compose** (orchestration)
