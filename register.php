@@ -50,15 +50,16 @@ if(isset($_POST['register'])) {
                 /* Insertion du nouvel utilisateur dans la table USERS */
                 $stmtU = $conn->prepare(
                     "INSERT INTO USERS (name, email, password, role, created_at)
-                     VALUES (:name, :email, :password, 'CLIENT', NOW())"
+                     VALUES (:name, :email, :password, 'CLIENT', SYSDATE)"
                 );
                 $stmtU->bindParam(":name",     $name);
                 $stmtU->bindParam(":email",    $email);
                 $stmtU->bindParam(":password", $hashed);
                 $stmtU->execute();
 
-                /* On récupère l'ID du nouvel utilisateur via lastInsertId */
-                $newId = (int) $conn->lastInsertId();
+                /* On récupère l'ID du nouvel utilisateur via SEQ_USERS.CURRVAL */
+                $seqStmt = $conn->query("SELECT SEQ_USERS.CURRVAL FROM DUAL");
+                $newId = (int) $seqStmt->fetchColumn();
 
                 /* On crée aussi l'entrée dans la table CLIENT */
                 $stmtC = $conn->prepare(
