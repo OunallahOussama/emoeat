@@ -2,7 +2,7 @@ FROM php:8.2-apache
 
 # Install Oracle Instant Client and OCI8/PDO_OCI
 RUN apt-get update && apt-get install -y \
-    libaio1 \
+    libaio1t64 \
     unzip \
     wget \
     && rm -rf /var/lib/apt/lists/*
