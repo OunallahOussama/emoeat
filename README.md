@@ -108,12 +108,10 @@ docker-compose -f docker-compose.prod.yml run --rm certbot renew
 docker-compose -f docker-compose.prod.yml restart nginx
 ```
 
-### Access Email UI (secured via SSH tunnel)
+### Access Email UI
 
-```bash
-ssh -i ~/.ssh/emoeat-key.pem -L 8025:localhost:8025 ec2-user@44.212.102.37
-# Then open http://localhost:8025 (login with MAILPIT_USER/MAILPIT_PASSWORD)
-```
+Open **http://emoeat.health:8025** in your browser.
+- Login: `MAILPIT_USER` / `MAILPIT_PASSWORD` from `.env`
 
 ## Email Configuration
 
