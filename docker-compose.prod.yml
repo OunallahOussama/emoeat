@@ -11,6 +11,8 @@ services:
       - certbot_conf:/etc/letsencrypt
     depends_on:
       - php
+      - phpmyadmin
+      - mailpit
     restart: unless-stopped
 
   certbot:
@@ -45,14 +47,14 @@ services:
     image: axllent/mailpit
     container_name: emoeat-mailpit
     restart: unless-stopped
-    ports:
-      - "8025:8025"
     expose:
+      - "8025"
       - "1025"
     environment:
       MP_SMTP_AUTH_ACCEPT_ANY: 1
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
       MP_UI_AUTH: ${MAILPIT_USER:-admin}:${MAILPIT_PASSWORD:-emoeat2026!}
+      MP_WEBROOT: /mailpit
       MP_SMTP_RELAY_HOST: ${SMTP_HOST:-email-smtp.us-east-1.amazonaws.com}
       MP_SMTP_RELAY_PORT: ${SMTP_PORT:-587}
       MP_SMTP_RELAY_USERNAME: ${SMTP_USER}
@@ -82,10 +84,11 @@ services:
     image: phpmyadmin/phpmyadmin
     container_name: emoeat-phpmyadmin
     restart: unless-stopped
-    ports:
-      - "8081:80"
+    expose:
+      - "80"
     environment:
       PMA_HOST: db
+      PMA_ABSOLUTE_URI: https://emoeat.health/phpmyadmin/
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_password}
     depends_on:
       db:

@@ -22,8 +22,8 @@ User → DNS (Namecheap) → EC2 (44.212.102.37)
 |---------|-----|--------|
 | App (HTTPS) | https://emoeat.health | Public |
 | App (HTTP) | http://emoeat.health | Redirects to HTTPS |
-| phpMyAdmin | http://emoeat.health:8081 | Public |
-| Email UI | http://emoeat.health:8025 | Auth required (MAILPIT_USER/MAILPIT_PASSWORD) |
+| phpMyAdmin | https://emoeat.health/phpmyadmin/ | SSL secured |
+| Email UI | https://emoeat.health/mailpit/ | Auth required (MAILPIT_USER/MAILPIT_PASSWORD) |
 
 ## Features
 
@@ -110,7 +110,7 @@ docker-compose -f docker-compose.prod.yml restart nginx
 
 ### Access Email UI
 
-Open **http://emoeat.health:8025** in your browser.
+Open **https://emoeat.health/mailpit/** in your browser.
 - Login: `MAILPIT_USER` / `MAILPIT_PASSWORD` from `.env`
 
 ## Email Configuration
