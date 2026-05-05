@@ -1,12 +1,54 @@
 # EmoEat - Emotion-Based Food Recommendation
 
+A web application that recommends foods based on your emotional state. Built with PHP, MySQL, and Docker — deployed on AWS EC2 with SSL and email support.
+
+## Architecture
+
+```
+User → DNS (Namecheap) → EC2 (44.212.102.37)
+         ↓
+   Nginx (SSL/Reverse Proxy)
+         ↓
+   PHP 8.2 + Apache (App)
+         ↓
+   MySQL 8.0 (Database)
+         ↓
+   Mailpit → AWS SES (Email Relay)
+```
+
 ## Live URLs
 
-| Service | URL |
-|---------|-----|
-| App (HTTPS) | https://emoeat.health |
-| App (HTTP) | http://emoeat.health (redirects to HTTPS) |
-| phpMyAdmin | http://emoeat.health:8081 |
+| Service | URL | Access |
+|---------|-----|--------|
+| App (HTTPS) | https://emoeat.health | Public |
+| App (HTTP) | http://emoeat.health | Redirects to HTTPS |
+| phpMyAdmin | http://emoeat.health:8081 | Public |
+| Email UI | http://localhost:8025 (SSH tunnel) | Auth required |
+
+## Features
+
+- **Emotion-based food recommendations** with emoji selection
+- **User authentication** with roles (Admin/Client)
+- **Password reset** via email (token-based, 1hr expiry)
+- **Welcome email** on registration
+- **Admin panel** — manage users, emotions, foods, activity logs
+- **User profile** and recommendation history
+- **108 unit tests** (PHPUnit)
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | PHP 8.2 + Bootstrap |
+| Backend | PHP + Apache |
+| Database | MySQL 8.0 |
+| Proxy | Nginx (SSL termination) |
+| SSL | Let's Encrypt (Certbot) |
+| Email | AWS SES + Mailpit (relay + UI) |
+| Containers | Docker Compose |
+| Hosting | AWS EC2 (t3.small) |
+| DNS | Namecheap |
+| Testing | PHPUnit 10.5 |
 
 ## Credentials
 
@@ -15,55 +57,129 @@
 - **Password:** password
 
 ### phpMyAdmin
-- **Server:** db
-- **Username:** root
-- **Password:** root_password
+- **Username:** root / **Password:** root_password
+- **Username:** emoeat_user / **Password:** emoeat_pass
 
-Or:
-- **Username:** emoeat_user
-- **Password:** emoeat_pass
-
-### MySQL (direct)
-- **Host:** emoeat.health
-- **Port:** 3306
-- **Database:** emoeat
-- **Username:** emoeat_user
-- **Password:** emoeat_pass
-
-## Docker Commands
+## Local Development
 
 ```bash
-# Start all services
-docker-compose up -d --build
+# Start all services (with Mailpit catching emails locally)
+docker compose up -d --build
 
-# Stop all services
-docker-compose down
+# View emails at http://localhost:8025
+# App at http://localhost
 
-# View logs
-docker-compose logs -f
-
-# Rebuild PHP container only
-docker-compose up -d --build php
-
-# Renew SSL certificate
-docker-compose run --rm certbot renew
-docker-compose restart nginx
+# Run tests
+vendor/bin/phpunit
 ```
 
-## Deployment (EC2)
+## Production Deployment (EC2)
+
+### First-time setup
+
+```bash
+git clone https://github.com/OunallahOussama/emoeat.git
+cd emoeat
+cp .env.example .env
+nano .env  # Fill in SES credentials + DB passwords
+chmod +x deploy/setup.sh
+./deploy/setup.sh
+```
+
+### Update deployment
 
 ```bash
 cd ~/emoeat
-git pull
-docker-compose down
-docker-compose up -d --build
+git pull origin main
+docker-compose -f docker-compose.prod.yml up -d --build
 ```
 
-## Stack
+### SSL certificate
 
-- **PHP 8.2** + Apache
-- **MySQL 8.0**
-- **Nginx** (reverse proxy + SSL)
-- **Let's Encrypt** (SSL certificate)
-- **phpMyAdmin** (database management)
-- **Docker Compose** (orchestration)
+```bash
+# Initial cert
+docker-compose -f docker-compose.prod.yml run --rm certbot certonly \
+    --webroot --webroot-path /var/www/certbot \
+    -d emoeat.health -d www.emoeat.health \
+    --email admin@emoeat.health --agree-tos --no-eff-email
+
+# Renewal (automated via cron)
+docker-compose -f docker-compose.prod.yml run --rm certbot renew
+docker-compose -f docker-compose.prod.yml restart nginx
+```
+
+### Access Email UI (secured via SSH tunnel)
+
+```bash
+ssh -i ~/.ssh/emoeat-key.pem -L 8025:localhost:8025 ec2-user@44.212.102.37
+# Then open http://localhost:8025 (login with MAILPIT_USER/MAILPIT_PASSWORD)
+```
+
+## Email Configuration
+
+Emails are sent via **AWS SES** with **Mailpit** as a relay:
+
+```
+PHP → msmtp → Mailpit (UI + logs) → AWS SES → Recipient inbox
+```
+
+### DNS Records (Namecheap)
+
+| Type | Host | Value |
+|------|------|-------|
+| A | @ | 44.212.102.37 |
+| A | www | 44.212.102.37 |
+| CNAME | `s2hcxcovilotnuul47hqjkla6yqle4so._domainkey` | `s2hcxcovilotnuul47hqjkla6yqle4so.dkim.amazonses.com` |
+| CNAME | `j7exvlvnnry7wx2ir3madbysqfcdvlty._domainkey` | `j7exvlvnnry7wx2ir3madbysqfcdvlty.dkim.amazonses.com` |
+| CNAME | `ltv2mxng7yymysxirrmvthlnmsmzdm55._domainkey` | `ltv2mxng7yymysxirrmvthlnmsmzdm55.dkim.amazonses.com` |
+| TXT | @ | `v=spf1 include:amazonses.com ~all` |
+| TXT | _dmarc | `v=DMARC1; p=quarantine; rua=mailto:noreply@emoeat.health` |
+
+## Environment Variables (.env)
+
+```env
+SMTP_HOST=email-smtp.us-east-1.amazonaws.com
+SMTP_PORT=587
+SMTP_FROM=noreply@emoeat.health
+SMTP_USER=AKIA...
+SMTP_PASSWORD=...
+SMTP_TLS=on
+DB_ROOT_PASSWORD=...
+DB_NAME=emoeat
+DB_USER=emoeat_user
+DB_PASSWORD=...
+MAILPIT_USER=admin
+MAILPIT_PASSWORD=...
+```
+
+## Project Structure
+
+```
+├── config/Database.php       # PDO connection manager
+├── connexion.php             # DB init + logActivity() helper
+├── docker-compose.yml        # Local development
+├── docker-compose.prod.yml   # Production (EC2 + SES)
+├── Dockerfile                # PHP 8.2 + msmtp + dynamic SMTP
+├── nginx.conf                # HTTP-only nginx config
+├── nginx-ssl.conf            # HTTPS nginx config
+├── docker/init.sql           # Database schema + seed data
+├── deploy/
+│   ├── deploy-aws.ps1        # PowerShell EC2 provisioning
+│   └── setup.sh              # EC2 setup (Docker, SSL, cron)
+├── tests/                    # 108 PHPUnit tests
+├── .env.example              # Environment template
+└── *.php                     # Application pages
+```
+
+## Testing
+
+```bash
+# Install dependencies
+composer install
+
+# Run all 108 tests
+vendor/bin/phpunit
+
+# Run specific test
+vendor/bin/phpunit tests/LoginTest.php
+```
