@@ -26,7 +26,7 @@ if(isset($_POST['login'])) {
     } else {
         try {
             /* On cherche l'utilisateur dans la base par son email */
-            $stmt = $conn->prepare("SELECT id_user, name, password, role FROM USERS WHERE EMAIL = :email");
+            $stmt = $conn->prepare("SELECT ID_USER, NAME, PASSWORD, ROLE FROM USERS WHERE EMAIL = :email");
             $stmt->bindParam(":email", $email);
             $stmt->execute();
             $user = $stmt->fetch(PDO::FETCH_ASSOC);

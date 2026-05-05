@@ -1,8 +1,8 @@
 ﻿<?php
 /* ================================================
    forgot_password.php - Réinitialisation du mot de passe
-   Étape 1 : l'utilisateur entre son email.
-   Étape 2 : il choisit un nouveau mot de passe.
+   L'utilisateur entre son email et reçoit un lien
+   de réinitialisation par email.
    ================================================ */
 session_start();
 include("connexion.php");
@@ -13,76 +13,65 @@ if(isset($_SESSION['user_id'])) {
     exit();
 }
 
-$step    = 1;   /* Étape actuelle : 1 = saisie email, 2 = nouveau mot de passe */
 $error   = '';
 $success = '';
-$found_email = '';
 
-/* Étape 1 : on vérifie que l'email existe dans la base */
-if(isset($_POST['check_email'])) {
+/* Traitement du formulaire : envoi du lien de réinitialisation */
+if(isset($_POST['send_reset'])) {
     $email = trim($_POST['email']);
     if(empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Veuillez entrer une adresse email valide.";
     } else {
         try {
-            $stmt = $conn->prepare("SELECT COUNT(*) AS CNT FROM USERS WHERE EMAIL = :email");
+            $stmt = $conn->prepare("SELECT ID_USER, NAME FROM USERS WHERE EMAIL = :email");
             $stmt->bindParam(':email', $email);
             $stmt->execute();
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            if((int)$row['CNT'] === 0) {
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if(!$user) {
                 $error = "Aucun compte trouvé avec cette adresse email.";
             } else {
-                /* Email trouvé : on passe à l'étape 2 */
-                $step = 2;
-                $found_email = $email;
+                /* Générer un token unique */
+                $token = bin2hex(random_bytes(32));
+                $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
+
+                /* Invalider les anciens tokens pour cet utilisateur */
+                $stDel = $conn->prepare("UPDATE PASSWORD_RESET_TOKENS SET USED = 1 WHERE ID_USER = :u AND USED = 0");
+                $stDel->execute([':u' => $user['ID_USER']]);
+
+                /* Sauvegarder le nouveau token */
+                $stIns = $conn->prepare("INSERT INTO PASSWORD_RESET_TOKENS (ID_USER, TOKEN, EXPIRES_AT) VALUES (:u, :t, :e)");
+                $stIns->execute([':u' => $user['ID_USER'], ':t' => $token, ':e' => $expiresAt]);
+
+                /* Construire le lien de réinitialisation */
+                $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+                $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+                $resetLink = $protocol . '://' . $host . '/reset_password.php?token=' . $token;
+
+                /* Envoyer l'email */
+                $to = $email;
+                $subject = "EmoEat - Réinitialisation de votre mot de passe";
+                $message = "Bonjour " . htmlspecialchars($user['NAME']) . ",\r\n\r\n";
+                $message .= "Vous avez demandé la réinitialisation de votre mot de passe.\r\n\r\n";
+                $message .= "Cliquez sur le lien suivant pour définir un nouveau mot de passe :\r\n";
+                $message .= $resetLink . "\r\n\r\n";
+                $message .= "Ce lien expire dans 1 heure.\r\n\r\n";
+                $message .= "Si vous n'avez pas fait cette demande, ignorez cet email.\r\n\r\n";
+                $message .= "-- L'équipe EmoEat";
+
+                $headers = "From: noreply@emoeat.health\r\n";
+                $headers .= "Reply-To: noreply@emoeat.health\r\n";
+                $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+
+                if(mail($to, $subject, $message, $headers)) {
+                    logActivity($conn, (int)$user['ID_USER'], 'PASSWORD_RESET_REQUESTED');
+                    $success = "Un email de réinitialisation a été envoyé à votre adresse. Vérifiez votre boîte de réception.";
+                } else {
+                    $error = "Erreur lors de l'envoi de l'email. Veuillez réessayer.";
+                }
             }
         } catch(PDOException $e) {
             $error = "Erreur de base de données : " . htmlspecialchars($e->getMessage());
-        }
-    }
-}
-
-/* Étape 2 : on enregistre le nouveau mot de passe chiffré */
-if(isset($_POST['reset_password'])) {
-    $email    = trim($_POST['email']);
-    $password = $_POST['new_password'];
-    $confirm  = $_POST['confirm_password'];
-
-    if(empty($password)) {
-        $error = "Veuillez entrer un nouveau mot de passe.";
-        $step  = 2;
-        $found_email = $email;
-    } elseif(strlen($password) < 6) {
-        $error = "Le mot de passe doit contenir au moins 6 caractères.";
-        $step  = 2;
-        $found_email = $email;
-    } elseif($password !== $confirm) {
-        $error = "Les mots de passe ne correspondent pas.";
-        $step  = 2;
-        $found_email = $email;
-    } else {
-        try {
-            $hashed = password_hash($password, PASSWORD_BCRYPT);
-            $stmt = $conn->prepare("UPDATE USERS SET PASSWORD = :pwd WHERE EMAIL = :email");
-            $stmt->bindParam(':pwd',   $hashed);
-            $stmt->bindParam(':email', $email);
-            $stmt->execute();
-
-            /* Log de l'activité */
-            $stId = $conn->prepare("SELECT ID_USER FROM USERS WHERE EMAIL = :email");
-            $stId->bindParam(':email', $email);
-            $stId->execute();
-            $uRow = $stId->fetch(PDO::FETCH_ASSOC);
-            if($uRow) {
-                logActivity($conn, (int)$uRow['ID_USER'], 'PASSWORD_RESET');
-            }
-
-            $success = "Mot de passe réinitialisé avec succès ! Vous pouvez maintenant vous connecter.";
-            $step = 1;
-        } catch(PDOException $e) {
-            $error = "Erreur : " . htmlspecialchars($e->getMessage());
-            $step  = 2;
-            $found_email = $email;
         }
     }
 }
@@ -103,13 +92,7 @@ if(isset($_POST['reset_password'])) {
         <div class="form-logo">
             <div class="logo-circle">&#128273;</div>
             <h2>Mot de passe oublié</h2>
-            <p>
-                <?php if($step === 1): ?>
-                    Entrez votre adresse email pour réinitialiser votre mot de passe.
-                <?php else: ?>
-                    Choisissez un nouveau mot de passe pour <strong><?php echo htmlspecialchars($found_email); ?></strong>.
-                <?php endif; ?>
-            </p>
+            <p>Entrez votre adresse email. Vous recevrez un lien pour réinitialiser votre mot de passe.</p>
         </div>
 
         <?php if(!empty($error)): ?>
@@ -119,8 +102,7 @@ if(isset($_POST['reset_password'])) {
             <div class="alert alert-success">&#10004; <?php echo htmlspecialchars($success); ?></div>
         <?php endif; ?>
 
-        <?php if($step === 1 && empty($success)): ?>
-        <!-- Étape 1 : Vérification email -->
+        <?php if(empty($success)): ?>
         <form method="POST" novalidate>
             <div class="form-group">
                 <label for="email">Adresse email</label>
@@ -128,28 +110,8 @@ if(isset($_POST['reset_password'])) {
                        placeholder="votre@email.com" required
                        value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
             </div>
-            <button type="submit" name="check_email" class="btn btn-green btn-full" style="margin-top:8px;">
-                &#128269; Vérifier mon email
-            </button>
-        </form>
-
-        <?php elseif($step === 2): ?>
-        <!-- Étape 2 : Nouveau mot de passe -->
-        <form method="POST" novalidate>
-            <input type="hidden" name="email" value="<?php echo htmlspecialchars($found_email); ?>">
-            <div class="form-group">
-                <label for="new_password">Nouveau mot de passe</label>
-                <input type="password" id="new_password" name="new_password" class="form-control"
-                       placeholder="••••••••" required minlength="6">
-                <small style="color:var(--text-l);font-size:12px;">Minimum 6 caractères</small>
-            </div>
-            <div class="form-group">
-                <label for="confirm_password">Confirmer le mot de passe</label>
-                <input type="password" id="confirm_password" name="confirm_password" class="form-control"
-                       placeholder="••••••••" required>
-            </div>
-            <button type="submit" name="reset_password" class="btn btn-green btn-full" style="margin-top:8px;">
-                &#128274; Enregistrer le nouveau mot de passe
+            <button type="submit" name="send_reset" class="btn btn-green btn-full" style="margin-top:8px;">
+                &#128233; Envoyer le lien de réinitialisation
             </button>
         </form>
         <?php endif; ?>

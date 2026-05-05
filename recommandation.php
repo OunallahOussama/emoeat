@@ -22,13 +22,13 @@ if(empty($_SESSION['csrf_token'])) {
 $csrf_token = $_SESSION['csrf_token'];
 
 /* -- Chargement du profil nutritionnel (poids, taille, allergies) -- */
-$stmtP = $conn->prepare("SELECT weight, height, allergies, goal FROM USER_PROFILE WHERE id_user = :u");
+$stmtP = $conn->prepare("SELECT WEIGHT, HEIGHT, ALLERGIES, GOAL FROM USER_PROFILE WHERE ID_USER = :u");
 $stmtP->bindParam(":u", $user_id);
 $stmtP->execute();
 $profile = $stmtP->fetch(PDO::FETCH_ASSOC);
 
 /* -- Chargement des émotions disponibles depuis la base (une seule par nom) -- */
-$emStmt = $conn->prepare("SELECT MIN(id_emotion) AS id_emotion, emotion_name FROM EMOTIONS GROUP BY emotion_name ORDER BY emotion_name");
+$emStmt = $conn->prepare("SELECT MIN(ID_EMOTION) AS ID_EMOTION, EMOTION_NAME FROM EMOTIONS GROUP BY EMOTION_NAME ORDER BY EMOTION_NAME");
 $emStmt->execute();
 $rawEmotions = $emStmt->fetchAll(PDO::FETCH_ASSOC);
 

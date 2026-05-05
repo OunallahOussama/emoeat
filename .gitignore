@@ -1,0 +1,20 @@
+# Environment variables (contains secrets)
+.env
+
+# Vendor/dependencies
+vendor/
+node_modules/
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker volumes
+db_data/
+
+# PHP
+*.log

@@ -103,38 +103,49 @@ Write-Host "[7/7] Uploading project and deploying..." -ForegroundColor Yellow
 # Upload project files
 scp -i $KeyPath -o StrictHostKeyChecking=no -r `
     "$ProjectPath/Dockerfile" `
-    "$ProjectPath/docker-compose.yml" `
+    "$ProjectPath/docker-compose.prod.yml" `
     "$ProjectPath/.dockerignore" `
+    "$ProjectPath/.env.example" `
+    "$ProjectPath/nginx-ssl.conf" `
     "$ProjectPath/config" `
     "$ProjectPath/images" `
     "$ProjectPath/docker" `
+    "$ProjectPath/deploy" `
     "$ProjectPath/*.php" `
     "$ProjectPath/*.css" `
     "ubuntu@${PublicIp}:~/"
 
 # Move files into proper structure and run setup
 ssh -i $KeyPath -o StrictHostKeyChecking=no "ubuntu@$PublicIp" @"
-mkdir -p ~/emoeat/config ~/emoeat/images ~/emoeat/docker
-mv ~/Dockerfile ~/docker-compose.yml ~/.dockerignore ~/emoeat/ 2>/dev/null || true
+mkdir -p ~/emoeat/config ~/emoeat/images ~/emoeat/docker ~/emoeat/deploy
+mv ~/Dockerfile ~/docker-compose.prod.yml ~/.dockerignore ~/nginx-ssl.conf ~/.env.example ~/emoeat/ 2>/dev/null || true
 mv ~/config/* ~/emoeat/config/ 2>/dev/null || true
 mv ~/images/* ~/emoeat/images/ 2>/dev/null || true
 mv ~/docker/* ~/emoeat/docker/ 2>/dev/null || true
+mv ~/deploy/* ~/emoeat/deploy/ 2>/dev/null || true
 mv ~/*.php ~/*.css ~/emoeat/ 2>/dev/null || true
 sudo apt update -qq && sudo apt install -y -qq docker.io docker-compose-v2
 sudo systemctl enable docker && sudo systemctl start docker
 sudo usermod -aG docker ubuntu
 sudo chmod 666 /var/run/docker.sock
-cd ~/emoeat && docker compose up -d --build
 "@
 
 Write-Host ""
 Write-Host "=========================================" -ForegroundColor Green
-Write-Host "  DEPLOYMENT COMPLETE!" -ForegroundColor Green
+Write-Host "  FILES UPLOADED! Next steps:" -ForegroundColor Green
 Write-Host "=========================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "  App:        http://$PublicIp" -ForegroundColor White
-Write-Host "  phpMyAdmin: http://${PublicIp}:8081" -ForegroundColor White
+Write-Host "  1. SSH into the server:" -ForegroundColor White
+Write-Host "     ssh -i $KeyPath ubuntu@$PublicIp" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "  SSH:  ssh -i $KeyPath ubuntu@$PublicIp" -ForegroundColor White
-Write-Host "  Admin login: admin@emoeat.com / password" -ForegroundColor White
+Write-Host "  2. Create .env with your SES credentials:" -ForegroundColor White
+Write-Host "     cd ~/emoeat && cp .env.example .env && nano .env" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "  3. Point DNS (Namecheap) A record:" -ForegroundColor White
+Write-Host "     emoeat.health -> $PublicIp" -ForegroundColor Cyan
+Write-Host "     www.emoeat.health -> $PublicIp" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "  4. Run the setup script:" -ForegroundColor White
+Write-Host "     chmod +x deploy/setup.sh && ./deploy/setup.sh" -ForegroundColor Cyan
+Write-Host ""
 Write-Host "=========================================" -ForegroundColor Green

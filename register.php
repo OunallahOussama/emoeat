@@ -70,7 +70,24 @@ if(isset($_POST['register'])) {
                 /* ACTIVITY_LOG (MPD) */
                 logActivity($conn, (int)$newId, 'USER_REGISTER');
 
-                $success = "Compte cree avec succes ! Vous pouvez maintenant vous connecter.";
+                /* Envoi d'un email de bienvenue au nouvel utilisateur */
+                $subject = "Bienvenue sur EmoEat, " . $name . " !";
+                $body  = "Bonjour " . $name . ",\r\n\r\n";
+                $body .= "Votre compte EmoEat a été créé avec succès !\r\n\r\n";
+                $body .= "Voici vos informations :\r\n";
+                $body .= "- Nom : " . $name . "\r\n";
+                $body .= "- Email : " . $email . "\r\n";
+                $body .= "- Rôle : Client\r\n\r\n";
+                $body .= "Vous pouvez vous connecter dès maintenant sur EmoEat et commencer à découvrir des recommandations alimentaires adaptées à vos émotions.\r\n\r\n";
+                $body .= "-- L'équipe EmoEat";
+
+                $headers = "From: noreply@emoeat.health\r\n";
+                $headers .= "Reply-To: noreply@emoeat.health\r\n";
+                $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+
+                mail($email, $subject, $body, $headers);
+
+                $success = "Compte cree avec succes ! Un email de confirmation a été envoyé. Vous pouvez maintenant vous connecter.";
             } catch(PDOException $e) {
                 $error = "Erreur lors de la creation du compte : " . htmlspecialchars($e->getMessage());
             }
