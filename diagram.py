@@ -46,62 +46,46 @@ with Diagram("EmoEat - Architecture EC2", show=False, filename="emoeat_architect
     mailpit >> Edge(label="SMTP relay :587") >> ses
 
 
-# App Flow Diagram
-with Diagram("EmoEat - Application Flow", show=False, filename="emoeat_app_flow", direction="TB"):
+# App Flow Diagram (MVC)
+with Diagram("EmoEat - Application Flow (MVC)", show=False, filename="emoeat_app_flow", direction="TB"):
     
     user = Users("Utilisateur")
     
-    with Cluster("Authentication"):
-        login = PHP("login.php")
-        register = PHP("register.php")
-        forgot = PHP("forgot_password.php")
-        reset = PHP("reset_password.php")
+    with Cluster("Front Controller"):
+        router = PHP("public/index.php\nRouter")
     
-    with Cluster("User Dashboard"):
-        dashboard = PHP("dashboard.php")
-        reco = PHP("recommandation.php")
-        historique = PHP("historique.php")
-        profile = PHP("profile.php")
+    with Cluster("Controllers"):
+        auth_ctrl = PHP("AuthController\nlogin, register\nforgot/reset password")
+        dash_ctrl = PHP("DashboardController\nuser stats")
+        reco_ctrl = PHP("RecommendationController\nemotion → food")
+        hist_ctrl = PHP("HistoryController\npast recommendations")
+        profile_ctrl = PHP("ProfileController\nweight, height, goals")
+        admin_ctrl = PHP("AdminController\nusers, foods, emotions\nactivity log")
     
-    with Cluster("Admin Panel"):
-        admin_dash = PHP("dashboard_admin.php")
-        admin_users = PHP("admin_users.php")
-        admin_emotions = PHP("admin_emotions.php")
-        admin_foods = PHP("admin_foods.php")
-        admin_log = PHP("admin_activity_log.php")
-    
+    with Cluster("Models"):
+        models = MySQL("User, Food, Emotion\nRecommendation, UserProfile\nUserEmotion, ActivityLog\nPasswordResetToken")
+
     with Cluster("Services"):
         db = MySQL("MySQL 8.0\nemoeat DB")
         email = Docker("Mailpit → SES\nno-reply@emoeat.health")
 
-    # User flow
-    user >> Edge(label="Auth") >> login
-    user >> Edge(label="Register") >> register
-    register >> Edge(label="Welcome email") >> email
-    login >> dashboard
-    dashboard >> reco
-    dashboard >> historique
-    dashboard >> profile
+    # Request flow
+    user >> Edge(label="HTTP Request") >> router
+    router >> auth_ctrl
+    router >> dash_ctrl
+    router >> reco_ctrl
+    router >> hist_ctrl
+    router >> profile_ctrl
+    router >> Edge(label="role=ADMIN") >> admin_ctrl
     
-    # Password reset flow
-    user >> Edge(label="Forgot?") >> forgot
-    forgot >> Edge(label="Reset link email") >> email
-    forgot >> reset
-    reset >> login
+    # Email flows
+    auth_ctrl >> Edge(label="Welcome/Reset email") >> email
     
-    # Admin flow
-    login >> Edge(label="role=admin") >> admin_dash
-    admin_dash >> admin_users
-    admin_dash >> admin_emotions
-    admin_dash >> admin_foods
-    admin_dash >> admin_log
-    
-    # DB connections
-    reco >> db
-    historique >> db
-    profile >> db
-    admin_users >> db
-    admin_emotions >> db
-    admin_foods >> db
-    register >> db
-    login >> db
+    # All controllers → Models → DB
+    auth_ctrl >> models
+    dash_ctrl >> models
+    reco_ctrl >> models
+    hist_ctrl >> models
+    profile_ctrl >> models
+    admin_ctrl >> models
+    models >> db

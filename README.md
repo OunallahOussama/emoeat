@@ -1,6 +1,6 @@
 # EmoEat - Emotion-Based Food Recommendation
 
-A web application that recommends foods based on your emotional state. Built with PHP, MySQL, and Docker — deployed on AWS EC2 with SSL and email support.
+A web application that recommends foods based on your emotional state. Built with PHP (MVC architecture), MySQL, and Docker — deployed on AWS EC2 with SSL and email support.
 
 ## Architecture
 
@@ -9,11 +9,25 @@ User → DNS (Namecheap) → EC2 (44.212.102.37)
          ↓
    Nginx (SSL/Reverse Proxy)
          ↓
-   PHP 8.2 + Apache (App)
+   PHP 8.2 + Apache (MVC App)
          ↓
    MySQL 8.0 (Database)
          ↓
    Mailpit → AWS SES (Email Relay)
+```
+
+### MVC Structure
+
+```
+Request → public/index.php (Front Controller)
+              ↓
+         App\Core\Router (URL matching)
+              ↓
+         App\Controllers\* (Business logic)
+              ↓
+         App\Models\* (Database via PDO)
+              ↓
+         App\Views\* (HTML templates)
 ```
 
 ## Live URLs
@@ -27,28 +41,32 @@ User → DNS (Namecheap) → EC2 (44.212.102.37)
 
 ## Features
 
-- **Emotion-based food recommendations** with emoji selection
-- **User authentication** with roles (Admin/Client)
+- **MVC architecture** with custom router, controllers, and models
+- **Emotion-based food recommendations** with emoji selection and profile-based filtering
+- **User authentication** with roles (Admin/Client) and session management
 - **Password reset** via email (token-based, 1hr expiry)
 - **Welcome email** on registration
-- **Admin panel** — manage users, emotions, foods, activity logs
-- **User profile** and recommendation history
-- **108 unit tests** (PHPUnit)
+- **Admin panel** — manage users, emotions, foods, rules, activity logs
+- **User profile** with BMI calculator and dietary preferences
+- **Recommendation history** tracking
+- **CSRF protection** on forms
+- **66 unit tests** (PHPUnit 10.5)
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
+| Architecture | Custom MVC (PSR-4 autoloading) |
 | Frontend | PHP 8.2 + Bootstrap |
-| Backend | PHP + Apache |
-| Database | MySQL 8.0 |
+| Backend | PHP + Apache (mod_rewrite) |
+| Database | MySQL 8.0 (PDO) |
 | Proxy | Nginx (SSL termination) |
 | SSL | Let's Encrypt (Certbot) |
 | Email | AWS SES + Mailpit (relay + UI) |
 | Containers | Docker Compose |
 | Hosting | AWS EC2 (t3.small) |
 | DNS | Namecheap |
-| Testing | PHPUnit 10.5 |
+| Testing | PHPUnit 10.5 (66 tests) |
 
 ## Credentials
 
@@ -153,20 +171,53 @@ MAILPIT_PASSWORD=...
 ## Project Structure
 
 ```
-├── config/Database.php       # PDO connection manager
-├── connexion.php             # DB init + logActivity() helper
+├── public/
+│   ├── index.php             # Front controller (entry point)
+│   ├── .htaccess             # Apache URL rewriting
+│   ├── style.css             # Global styles
+│   └── images/               # Food images
+├── app/
+│   ├── Core/
+│   │   ├── App.php           # Bootstrap (session, URI, dispatch)
+│   │   ├── Router.php        # Route matching with {param} support
+│   │   ├── Controller.php    # Base controller (auth, views, redirect)
+│   │   └── Model.php         # Base model (PDO injection)
+│   ├── Controllers/
+│   │   ├── HomeController.php
+│   │   ├── AuthController.php
+│   │   ├── DashboardController.php
+│   │   ├── AdminController.php
+│   │   ├── ProfileController.php
+│   │   ├── RecommendationController.php
+│   │   └── HistoryController.php
+│   ├── Models/
+│   │   ├── User.php, Food.php, Emotion.php
+│   │   ├── Recommendation.php, UserProfile.php
+│   │   ├── UserEmotion.php, ActivityLog.php
+│   │   └── PasswordResetToken.php
+│   └── Views/
+│       ├── layouts/main.php
+│       ├── partials/navbar.php, footer.php
+│       ├── home/, auth/, dashboard/
+│       ├── admin/, profile/
+│       ├── recommendation/, history/
+│       └── ...
+├── config/
+│   ├── Database.php          # PDO connection (env-based)
+│   └── routes.php            # All route definitions
+├── tests/
+│   ├── Core/RouterTest.php
+│   ├── Models/               # 7 model tests
+│   └── Controllers/          # 2 controller tests
 ├── docker-compose.yml        # Local development
 ├── docker-compose.prod.yml   # Production (EC2 + SES)
-├── Dockerfile                # PHP 8.2 + msmtp + dynamic SMTP
-├── nginx.conf                # HTTP-only nginx config
-├── nginx-ssl.conf            # HTTPS nginx config
+├── Dockerfile                # PHP 8.2 + Composer + msmtp
+├── nginx.conf / nginx-ssl.conf
 ├── docker/init.sql           # Database schema + seed data
 ├── deploy/
 │   ├── deploy-aws.ps1        # PowerShell EC2 provisioning
 │   └── setup.sh              # EC2 setup (Docker, SSL, cron)
-├── tests/                    # 108 PHPUnit tests
-├── .env.example              # Environment template
-└── *.php                     # Application pages
+└── .env.example              # Environment template
 ```
 
 ## Testing
@@ -175,9 +226,22 @@ MAILPIT_PASSWORD=...
 # Install dependencies
 composer install
 
-# Run all 108 tests
+# Run all 66 tests
 vendor/bin/phpunit
 
-# Run specific test
-vendor/bin/phpunit tests/LoginTest.php
+# Run specific test suite
+vendor/bin/phpunit --testsuite Models
+vendor/bin/phpunit --testsuite Controllers
+vendor/bin/phpunit --testsuite Core
+
+# Run inside Docker
+docker exec emoeat-php vendor/bin/phpunit
 ```
+
+### Test Suites
+
+| Suite | Tests | Coverage |
+|-------|-------|----------|
+| Models | 52 | User, Food, Emotion, Recommendation, UserProfile, ActivityLog, PasswordResetToken |
+| Controllers | 12 | RecommendationController, HistoryController (static helpers) |
+| Core | 5 | Router (registration, matching, params, 404) |

@@ -4,8 +4,14 @@
          bootstrap="tests/bootstrap.php"
          colors="true">
     <testsuites>
-        <testsuite name="EmoEat Tests">
-            <directory>tests</directory>
+        <testsuite name="Models">
+            <directory>tests/Models</directory>
+        </testsuite>
+        <testsuite name="Controllers">
+            <directory>tests/Controllers</directory>
+        </testsuite>
+        <testsuite name="Core">
+            <directory>tests/Core</directory>
         </testsuite>
     </testsuites>
 </phpunit>
