@@ -59,8 +59,8 @@ if(isset($_POST['send_reset'])) {
                 $message .= "Si vous n'avez pas fait cette demande, ignorez cet email.\r\n\r\n";
                 $message .= "-- L'équipe EmoEat";
 
-                $headers = "From: noreply@emoeat.health\r\n";
-                $headers .= "Reply-To: noreply@emoeat.health\r\n";
+                $headers = "From: no-reply@emoeat.health\r\n";
+                $headers .= "Reply-To: no-reply@emoeat.health\r\n";
                 $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
 
                 if(mail($to, $subject, $message, $headers)) {

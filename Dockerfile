@@ -16,7 +16,7 @@ RUN echo '#!/bin/bash\n\
 set -e\n\
 SMTP_HOST=${SMTP_HOST:-mailpit}\n\
 SMTP_PORT=${SMTP_PORT:-1025}\n\
-SMTP_FROM=${SMTP_FROM:-noreply@emoeat.health}\n\
+SMTP_FROM=${SMTP_FROM:-no-reply@emoeat.health}\n\
 SMTP_USER=${SMTP_USER:-}\n\
 SMTP_PASSWORD=${SMTP_PASSWORD:-}\n\
 SMTP_TLS=${SMTP_TLS:-off}\n\

@@ -81,8 +81,8 @@ if(isset($_POST['register'])) {
                 $body .= "Vous pouvez vous connecter dès maintenant sur EmoEat et commencer à découvrir des recommandations alimentaires adaptées à vos émotions.\r\n\r\n";
                 $body .= "-- L'équipe EmoEat";
 
-                $headers = "From: noreply@emoeat.health\r\n";
-                $headers .= "Reply-To: noreply@emoeat.health\r\n";
+                $headers = "From: no-reply@emoeat.health\r\n";
+                $headers .= "Reply-To: no-reply@emoeat.health\r\n";
                 $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
 
                 mail($email, $subject, $body, $headers);

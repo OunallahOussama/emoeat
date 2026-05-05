@@ -35,7 +35,7 @@ services:
       DB_PASSWORD: emoeat_pass
       SMTP_HOST: ${SMTP_HOST:-mailpit}
       SMTP_PORT: ${SMTP_PORT:-1025}
-      SMTP_FROM: ${SMTP_FROM:-noreply@emoeat.health}
+      SMTP_FROM: ${SMTP_FROM:-no-reply@emoeat.health}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_TLS: ${SMTP_TLS:-off}

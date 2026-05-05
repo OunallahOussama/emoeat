@@ -41,7 +41,7 @@ if [ ! -f "$PROJECT_DIR/.env" ]; then
     echo ""
     echo "  SMTP_HOST=email-smtp.us-east-1.amazonaws.com"
     echo "  SMTP_PORT=587"
-    echo "  SMTP_FROM=noreply@emoeat.health"
+    echo "  SMTP_FROM=no-reply@emoeat.health"
     echo "  SMTP_USER=YOUR_SES_SMTP_USERNAME"
     echo "  SMTP_PASSWORD=YOUR_SES_SMTP_PASSWORD"
     echo "  SMTP_TLS=on"

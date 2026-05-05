@@ -31,7 +31,7 @@ with Diagram("EmoEat - Architecture EC2", show=False, filename="emoeat_architect
             with Cluster("Email Layer"):
                 mailpit = Docker("Mailpit\n(SMTP Relay + UI)\nPort 1025/8025")
 
-    ses = SimpleEmailServiceSes("AWS SES\nnoreply@emoeat.health")
+    ses = SimpleEmailServiceSes("AWS SES\nno-reply@emoeat.health")
 
     # Connections
     users >> Edge(label="HTTPS") >> dns
@@ -72,7 +72,7 @@ with Diagram("EmoEat - Application Flow", show=False, filename="emoeat_app_flow"
     
     with Cluster("Services"):
         db = MySQL("MySQL 8.0\nemoeat DB")
-        email = Docker("Mailpit → SES\nnoreply@emoeat.health")
+        email = Docker("Mailpit → SES\nno-reply@emoeat.health")
 
     # User flow
     user >> Edge(label="Auth") >> login

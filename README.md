@@ -133,14 +133,14 @@ PHP → msmtp → Mailpit (UI + logs) → AWS SES → Recipient inbox
 | CNAME | `j7exvlvnnry7wx2ir3madbysqfcdvlty._domainkey` | `j7exvlvnnry7wx2ir3madbysqfcdvlty.dkim.amazonses.com` |
 | CNAME | `ltv2mxng7yymysxirrmvthlnmsmzdm55._domainkey` | `ltv2mxng7yymysxirrmvthlnmsmzdm55.dkim.amazonses.com` |
 | TXT | @ | `v=spf1 include:amazonses.com ~all` |
-| TXT | _dmarc | `v=DMARC1; p=quarantine; rua=mailto:noreply@emoeat.health` |
+| TXT | _dmarc | `v=DMARC1; p=quarantine; rua=mailto:no-reply@emoeat.health` |
 
 ## Environment Variables (.env)
 
 ```env
 SMTP_HOST=email-smtp.us-east-1.amazonaws.com
 SMTP_PORT=587
-SMTP_FROM=noreply@emoeat.health
+SMTP_FROM=no-reply@emoeat.health
 SMTP_USER=AKIA...
 SMTP_PASSWORD=...
 SMTP_TLS=on
