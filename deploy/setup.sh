@@ -2,6 +2,7 @@
 # ============================================
 # EmoEat - EC2 Production Setup Script
 # Run this AFTER SSH-ing into your EC2 instance
+# Supports Ubuntu (apt) and Amazon Linux (dnf/yum)
 # Usage: chmod +x setup.sh && ./setup.sh
 # ============================================
 
@@ -15,25 +16,49 @@ echo "========================================="
 echo "  EmoEat - Production Server Setup"
 echo "========================================="
 
-# 1. Update system
-echo "[1/7] Updating system..."
-sudo apt update && sudo apt upgrade -y
+# 1. Update system & install Docker
+echo "[1/6] Installing Docker..."
+if command -v apt >/dev/null 2>&1; then
+    sudo apt update && sudo apt upgrade -y
+    sudo apt install -y docker.io docker-compose-v2 git
+elif command -v dnf >/dev/null 2>&1; then
+    sudo dnf update -y
+    sudo dnf install -y docker git
+    sudo dnf install -y docker-compose-plugin 2>/dev/null || sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && sudo chmod +x /usr/local/bin/docker-compose
+elif command -v yum >/dev/null 2>&1; then
+    sudo yum update -y
+    sudo yum install -y docker git
+    sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && sudo chmod +x /usr/local/bin/docker-compose
+fi
 
-# 2. Install Docker
-echo "[2/7] Installing Docker..."
-sudo apt install -y docker.io docker-compose-v2
 sudo systemctl enable docker
 sudo systemctl start docker
 sudo usermod -aG docker $USER
 sudo chmod 666 /var/run/docker.sock
 
-# 3. Create project directory
-echo "[3/7] Setting up project..."
-mkdir -p "$PROJECT_DIR"
-cd "$PROJECT_DIR"
+# Detect compose command
+if docker compose version >/dev/null 2>&1; then
+    COMPOSE_CMD="docker compose"
+elif command -v docker-compose >/dev/null 2>&1; then
+    COMPOSE_CMD="docker-compose"
+else
+    echo "ERROR: neither 'docker compose' nor 'docker-compose' is available."
+    exit 1
+fi
+echo "  Using: $COMPOSE_CMD"
 
-# 4. Check .env file
-echo "[4/7] Checking .env configuration..."
+# 2. Setup project directory
+echo "[2/6] Setting up project..."
+if [ -d "$PROJECT_DIR/.git" ]; then
+    cd "$PROJECT_DIR"
+    git pull origin main
+else
+    git clone https://github.com/OunallahOussama/emoeat.git "$PROJECT_DIR"
+    cd "$PROJECT_DIR"
+fi
+
+# 3. Check .env file
+echo "[3/6] Checking .env configuration..."
 if [ ! -f "$PROJECT_DIR/.env" ]; then
     echo ""
     echo "ERROR: .env file not found!"
@@ -53,16 +78,16 @@ if [ ! -f "$PROJECT_DIR/.env" ]; then
     exit 1
 fi
 
-# 5. Start services (HTTP only first for SSL cert)
-echo "[5/7] Starting services (HTTP mode for SSL setup)..."
+# 4. Start services (HTTP only first for SSL cert)
+echo "[4/6] Starting services (HTTP mode for SSL setup)..."
 cd "$PROJECT_DIR"
-docker compose -f docker-compose.prod.yml up -d --build
+$COMPOSE_CMD -f docker-compose.prod.yml up -d --build
 
-# 6. Get SSL certificate from Let's Encrypt
-echo "[6/7] Obtaining SSL certificate for $DOMAIN..."
+# 5. Get SSL certificate from Let's Encrypt
+echo "[5/6] Obtaining SSL certificate for $DOMAIN..."
 sleep 5  # Wait for nginx to start
 
-docker compose -f docker-compose.prod.yml run --rm certbot certonly \
+$COMPOSE_CMD -f docker-compose.prod.yml run --rm certbot certonly \
     --webroot \
     --webroot-path /var/www/certbot \
     -d "$DOMAIN" \
@@ -71,12 +96,12 @@ docker compose -f docker-compose.prod.yml run --rm certbot certonly \
     --agree-tos \
     --no-eff-email
 
-# 7. Restart nginx with SSL
-echo "[7/7] Restarting nginx with SSL..."
-docker compose -f docker-compose.prod.yml restart nginx
+# 6. Restart nginx with SSL
+echo "[6/6] Restarting nginx with SSL..."
+$COMPOSE_CMD -f docker-compose.prod.yml restart nginx
 
 # Setup auto-renewal cron
-echo "0 3 * * * cd $PROJECT_DIR && docker compose -f docker-compose.prod.yml run --rm certbot renew && docker compose -f docker-compose.prod.yml restart nginx" | sudo crontab -
+echo "0 3 * * * cd $PROJECT_DIR && $COMPOSE_CMD -f docker-compose.prod.yml run --rm certbot renew && $COMPOSE_CMD -f docker-compose.prod.yml restart nginx" | sudo crontab -
 
 PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo "YOUR_IP")
 
