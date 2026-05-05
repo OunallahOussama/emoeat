@@ -46,12 +46,13 @@ services:
     container_name: emoeat-mailpit
     restart: unless-stopped
     ports:
-      - "8025:8025"
+      - "127.0.0.1:8025:8025"
     expose:
       - "1025"
     environment:
       MP_SMTP_AUTH_ACCEPT_ANY: 1
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
+      MP_UI_AUTH: ${MAILPIT_USER:-admin}:${MAILPIT_PASSWORD:-emoeat2026!}
       MP_SMTP_RELAY_HOST: ${SMTP_HOST:-email-smtp.us-east-1.amazonaws.com}
       MP_SMTP_RELAY_PORT: ${SMTP_PORT:-587}
       MP_SMTP_RELAY_USERNAME: ${SMTP_USER}
