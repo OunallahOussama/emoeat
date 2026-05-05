@@ -23,7 +23,7 @@ User → DNS (Namecheap) → EC2 (44.212.102.37)
 | App (HTTPS) | https://emoeat.health | Public |
 | App (HTTP) | http://emoeat.health | Redirects to HTTPS |
 | phpMyAdmin | http://emoeat.health:8081 | Public |
-| Email UI | http://localhost:8025 (SSH tunnel) | Auth required |
+| Email UI | http://emoeat.health:8025 | Auth required (MAILPIT_USER/MAILPIT_PASSWORD) |
 
 ## Features
 
